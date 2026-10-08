@@ -1,0 +1,11 @@
+FROM fedora:latest
+
+# gcc-aarch64-linux-gnu: cross compiler (provides aarch64-linux-gnu-gcc)
+# binutils-aarch64-linux-gnu: GNU ld (provides aarch64-linux-gnu-ld)
+# python3: runs stubs/so_stub.py; make: the build itself
+RUN dnf install -y gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu python3 make \
+    && dnf clean all
+
+# The Makefile and so_stub.py hardcode the QNX-style tool name; map it
+# to Fedora's. (ld.lld is already named correctly by the lld package.)
+RUN ln -s /usr/bin/aarch64-linux-gnu-gcc /usr/local/bin/aarch64-elf-gcc

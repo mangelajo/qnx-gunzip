@@ -94,7 +94,8 @@ def build_stub(soname, funcs, variables, out):
     # 2. Assemble, then link into a shared library.
     obj = out + '.o'
     subprocess.run(['aarch64-elf-gcc', '-c', asm, '-o', obj], check=True)
-    subprocess.run(['ld.lld', '-shared', '-o', out, obj,
+    ld = os.environ.get('STUB_LD', 'ld.lld')
+    subprocess.run([ld, '-shared', '-o', out, obj,
                     '--soname=' + soname], check=True)
 
     # 3. lld records --soname in DT_STRTPATH instead of DT_SONAME, so patch
