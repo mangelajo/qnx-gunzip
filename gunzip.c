@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <zlib.h>
 
+
 /* gunzip filter: reads gzip from fd 0 (stdin), writes decompressed data to fd 1 (stdout).
    Usage: ./gunzip < file.gz > file.out
    Uses inflate() with 15+32 so zlib auto-skips the gzip header and trailer.
