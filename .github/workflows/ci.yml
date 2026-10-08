@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  pull_request
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # build in the fedora container, same flags as `make container-build`
+      - name: Build in fedora container (podman)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq podman
+          podman build -t gunzip-builder .
+          podman run --rm -v "$GITHUB_WORKSPACE":/src -w /src gunzip-builder \
+            make LD=aarch64-linux-gnu-ld STUB_LD=aarch64-linux-gnu-ld
+
+      # the QNX binary can't run on a linux runner, so verify the artifact:
+      # aarch64 ELF, QNX interpreter, correct SONAMEs and NEEDED entries
+      - name: Verify artifact
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq binutils-aarch64-linux-gnu
+          file gunzip | grep -q 'ARM aarch64'
+          file gunzip | grep -q '/usr/lib/ldqnx-64.so.2'
+          aarch64-linux-gnu-readelf -d gunzip | grep -q 'NEEDED.*libc.so.5'
+          aarch64-linux-gnu-readelf -d gunzip | grep -q 'NEEDED.*libz.so.2'
+          aarch64-linux-gnu-readelf -d stubs/libc.min.so_stub.so | grep -q 'SONAME.*libc.so.5'
+          aarch64-linux-gnu-readelf -d stubs/libz.min.so_stub.so | grep -q 'SONAME.*libz.so.2'
+
+      # runtime test: build the same source natively against the runner's
+      # zlib and check a gzip round-trip is byte-identical
+      - name: Round-trip test (native build)
+        run: |
+          sudo apt-get install -y -qq zlib1g-dev
+          gcc -O2 gunzip.c -lz -o /tmp/gunzip-native
+          head -c 100000 /dev/urandom > /tmp/t
+          cp /tmp/t /tmp/t.keep
+          gzip -f /tmp/t
+          /tmp/gunzip-native < /tmp/t.gz > /tmp/out
+          cmp /tmp/t.keep /tmp/out
+          echo "round-trip OK"
