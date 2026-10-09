@@ -32,6 +32,8 @@ typedef struct z_stream_s {
 #define Z_NO_FLUSH   0
 #define Z_BUF_ERROR  (-5)
 #define ZLIB_VERSION "1.2.13"
+#define MAX_WBITS      15  /* 32K LZ77 window (matches zconf.h in real zlib) */
+#define Z_WINDOW_AUTO  32  /* add to windowBits: auto-detect zlib or gzip header */
 
 int  inflateInit2_(z_stream *strm, int windowBits, const char *version, int stream_size);
 int  inflate(z_stream *strm, int flush);

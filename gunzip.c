@@ -5,7 +5,8 @@
 
 /* gunzip filter: reads gzip from fd 0 (stdin), writes decompressed data to fd 1 (stdout).
    Usage: ./gunzip < file.gz > file.out
-   Uses inflate() with 15+32 so zlib auto-skips the gzip header and trailer.
+   Uses inflate() with MAX_WBITS + Z_WINDOW_AUTO so zlib auto-detects
+   zlib or gzip headers.
    Uses read()/write() on fds directly (portable; some libc variants do not export stdin/stdout/stderr). */
 
 static void err(const char *s) { write(2, s, strlen(s)); }
@@ -25,7 +26,7 @@ int main(void) {
     strm.next_out = Z_NULL;
     strm.avail_out = 0;
 
-    if (inflateInit2(&strm, 15 + 32) != Z_OK) {
+    if (inflateInit2(&strm, MAX_WBITS + Z_WINDOW_AUTO) != Z_OK) {
         err("inflateInit2 failed\n");
         return 1;
     }
